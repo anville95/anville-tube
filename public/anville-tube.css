@@ -1,0 +1,1217 @@
+:root {
+    --primary-foreground-color: #f28500;
+    --primary-background-color: black;
+
+    --lighter-foreground-color: #ffbe6e;
+
+    --input-placeholder-color: #6d3c00;
+    --button-background-color: #3e2200;
+    --button-hover-background-color: #945100;
+
+    --container-background-color: #1b0f00;
+    --darker-container-background-color: #0f0800;
+
+    --short-width: 90vw;
+    --max-short-width: 50vh;
+    --short-heigth: 80vh;
+
+    --video-width: 96vw;
+    --max-video-height: calc(96vh - 4rem);
+}
+
+.scrollBarVisibleElements {
+    /*Scrollbar customization*/
+    /*Microsoft*/
+    scrollbar-3dlight-color: var(--container-background-color);
+    scrollbar-arrow-color: var(--primary-foreground-color);
+    scrollbar-darkshadow-color: var(--primary-foreground-color);
+
+    /*Firefox(Gecko)*/
+    scrollbar-color: var(--primary-foreground-color);
+    scrollbar-width: 8px;
+}
+
+.scrollBarVisibleElements::-webkit-scrollbar {
+    width: 5px;
+}
+
+.scrollBarVisibleElements::-webkit-scrollbar-track {
+    background: var(--container-background-color);
+}
+
+
+.scrollBarVisibleElements::-webkit-scrollbar-thumb {
+    background-color: var(--primary-foreground-color);
+    border-radius: 12px;
+    border: none;
+}
+
+.scrollBarHiddenElements,
+body,
+html {
+    /*Preventing illegal scrollbar styling whatever...*/
+    scrollbar-face-color: ThreeDFace !important;
+    scrollbar-shadow-color: ThreeDDarkShadow !important;
+    scrollbar-highlight-color: ThreeDHighlight !important;
+    scrollbar-3dlight-color: ThreeDLightShadow !important;
+    scrollbar-darkshadow-color: ThreeDDarkShadow !important;
+    scrollbar-track-color: Scrollbar !important;
+    scrollbar-arrow-color: ButtonText !important;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollBarHiddenElements::-webkit-scrollbar,
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+    display: none;
+}
+
+body,
+html {
+    background-color: var(--primary-background-color);
+}
+
+* {
+    color: var(--primary-foreground-color);
+    font-size: 0.8rem;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+a {
+    display: table;
+    color: var(--lighter-foreground-color);
+    font-size: 0.7rem;
+    margin: 0rem auto;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+label {
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+#root-div-parent-parent {
+    min-height: 95vh;
+    min-width: 95vw;
+    display: table;
+    margin: 0rem auto;
+}
+
+#root-div-parent {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+#root-div {
+    display: table;
+    margin: 0rem auto;
+}
+
+.form-input {
+    display: table;
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    background: transparent;
+    padding: 0.2rem 0.3rem;
+    margin: 0.4rem auto;
+    text-align: center;
+}
+
+.form-input::placeholder {
+    font-size: 0.7rem;
+    color: var(--input-placeholder-color);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--lighter-foreground-color);
+}
+
+.button {
+    display: table;
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    padding: 0.2rem 0.4rem;
+    margin: 0.5rem auto;
+    background-color: var(--button-background-color);
+    cursor: pointer;
+    text-align: center;
+}
+
+.inline-button {
+    display: inline;
+}
+
+.button:hover {
+    background-color: var(--button-hover-background-color);
+}
+
+.button:active {
+    background-color: var(--primary-foreground-color);
+}
+
+.button:focus {
+    outline: none;
+}
+
+div.auth-page {
+    padding: 0.5rem 1rem;
+    background-color: var(--container-background-color);
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.4rem;
+}
+
+div.auth-page form img {
+    display: table;
+    height: 3rem;
+    width: 3rem;
+    border: solid 1px var(--lighter-foreground-color);
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0.3rem auto;
+}
+
+.highlight {
+    font-size: 0.9rem;
+    color: var(--lighter-foreground-color);
+    display: table;
+    white-space: normal;
+    text-align: center;
+    font-weight: bolder;
+    margin: 0.7rem auto;
+    margin-bottom: 1rem;
+    text-decoration: none;
+}
+
+#status-bar {
+    display: table;
+    width: 98vw;
+    height: 1rem;
+    margin: 0rem auto;
+}
+
+#status-bar .image-button {
+    float: right;
+}
+
+#logo-div {
+    display: inline-table;
+    float: left;
+}
+
+#logo-div img {
+    vertical-align: middle;
+    height: 1.4rem;
+    margin: 0rem 0.1rem;
+}
+
+#logo-div b {
+    vertical-align: middle;
+    font-size: 1.4rem;
+    font-weight: 900;
+}
+
+.image-button {
+    cursor: pointer;
+    height: 1rem;
+    margin: 0rem 0.2rem;
+}
+
+#tabs-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-y: scroll;
+    width: 98vw;
+    height: calc(97vh - 4rem);
+    margin: 0rem auto;
+    text-align: center;
+    border-top: solid 1px var(--button-hover-background-color);
+    border-bottom: solid 1px var(--button-hover-background-color);
+    scroll-snap-type: y mandatory;
+}
+
+#tab-buttons-container {
+    cursor: pointer;
+    display: table;
+    width: 98vw;
+    white-space: nowrap;
+}
+
+div.tab-button {
+    display: inline-table;
+    vertical-align: middle;
+    border-radius: 0.3rem;
+    width: 18%;
+    margin: 0rem 0.4rem;
+}
+
+div.tab-button:hover {
+    background-color: var(--button-background-color);
+}
+
+div.tab-button:active {
+    background-color: var(--button-hover-background-color);
+}
+
+div.tab-button-selected {
+    background-color: var(--button-background-color);
+    box-shadow: 0rem 0rem 0.2rem 0.2rem var(--button-hover-background-color);
+}
+
+div.tab-button img {
+    display: table;
+    height: 1.2rem;
+    margin: 0.2rem auto;
+}
+
+div.tab-button p {
+    display: table;
+    margin: 0rem auto;
+    text-align: center;
+}
+
+div.tab {
+    width: 98%;
+    margin: 0rem auto;
+    scroll-snap-type: y mandatory;
+}
+
+div.video {
+    display: table;
+    position: relative;
+    margin: 1rem auto;
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+}
+
+div.video video {
+    display: table;
+    width: var(--video-width);
+    max-height: var(--max-video-height);
+    border-radius: 0.3rem;
+    object-fit: contain;
+}
+
+div.commenting-popup {
+    display: table;
+    position: absolute;
+    top: 2.5%;
+    left: 5%;
+    z-index: 12;
+    background-color: var(--container-background-color);
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    width: 80%;
+    height: 90%;
+    margin: 1.25% 5%;
+}
+
+div.comment {
+    display: table;
+    border-radius: 0.3rem;
+    background-color: var(--button-background-color);
+    margin: 0.8rem auto;
+    margin-left: 0rem;
+}
+
+div.comments-container {
+    display: flex;
+    width: 100%;
+    height: 60%;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    border-radius: 0.3rem;
+}
+
+div.comment input {
+    display: table;
+    margin-left: 0rem;
+    background-color: transparent;
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.3rem;
+    padding: 0.2rem;
+}
+
+div.comment div {
+    display: table;
+    white-space: normal;
+    padding: 0.4rem;
+    text-align: start;
+}
+
+div.commenting-popup textarea {
+    display: flex;
+    height: 34%;
+    width: 100%;
+    background: transparent;
+    border-radius: 0.3rem;
+    border: solid 1px var(--button-hover-background-color);
+    margin: 0.8rem auto;
+}
+
+div.commenting-popup textarea:focus {
+    outline: none;
+}
+
+div.commenting-popup textarea::placeholder {
+    color: var(--button-hover-background-color);
+    font-size: 0.7rem;
+}
+
+div.video-ui {
+    display: table;
+    position: absolute;
+    top: 0rem;
+    left: 0rem;
+    width: var(--video-width);
+    height: 100%;
+    z-index: 9;
+}
+
+div.video-ui div.buttons-container {
+    display: table;
+    width: var(--video-width);
+    height: calc(100% - 6.4rem);
+    white-space: nowrap;
+}
+
+div.video-ui div.play-button-container,
+div.fullscreen-button-container,
+div.playback-time-container {
+    display: inline-table;
+    vertical-align: bottom;
+}
+
+div.video-ui div.play-button-container {
+    width: calc(var(--video-width) - 6rem);
+    height: 100%;
+}
+
+div.video-ui div.fullscreen-button-container div {
+    display: table;
+    height: 1.5rem;
+    width: 2rem;
+    border-left: solid 0.2rem var(--primary-foreground-color);
+    border-right: solid 0.2rem var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    background-color: #94510060;
+    cursor: pointer;
+}
+
+div.video-ui div.fullscreen-button-container div:active {
+    background-color: var(--primary-foreground-color);
+}
+
+div.playback-time-container {
+    font-size: 0.7rem;
+    width: 3rem;
+    white-space: normal;
+}
+
+div.video-ui div.buttons-container img {
+    display: table;
+    height: 15vh;
+    margin: 0rem auto;
+    margin-top: calc(25% - 7.5vh);
+    cursor: pointer;
+    user-select: none;
+}
+
+div.video-ui div.playback-progress {
+    display: table;
+    height: 0.2rem;
+    width: 100%;
+    border-radius: 0.3rem;
+    background-color: var(--primary-foreground-color);
+    margin: 0.1rem 0rem;
+}
+
+div.video-ui div.title-container {
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    width: var(--video-width);
+    height: 3rem;
+}
+
+div.video-ui p {
+    display: table;
+    width: 80vw;
+    margin: 0.4rem auto;
+}
+
+div.reactions-container {
+    display: table;
+    width: 80vw;
+    margin: 0.4rem auto;
+    text-align: center;
+    white-space: nowrap;
+}
+
+div.reaction {
+    display: inline-table;
+    width: 28%;
+    border-radius: 0.3rem;
+    text-align: center;
+    margin: 0rem 0.4rem;
+    padding: 0.2rem 0.4rem;
+    background-color: #94510030;
+}
+
+div.reaction img {
+    cursor: pointer;
+    vertical-align: middle;
+    height: 1rem;
+}
+
+div.reaction input {
+    vertical-align: middle;
+    width: 70%;
+    background: transparent;
+    border: none;
+    text-align: left;
+}
+
+div.tab form {
+    display: table;
+    padding: 0.5rem 0.2rem;
+    margin: 1rem auto;
+    background-color: var(--container-background-color);
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.4rem;
+}
+
+div.tab form video {
+    display: table;
+    width: 80vw;
+    max-height: 70vh;
+    object-fit: contain;
+    margin: 0.4rem auto;
+    border-radius: 0.3rem;
+}
+
+div.tab form input[type="text"] {
+    width: 90%;
+}
+
+img.floating-button {
+    display: table;
+    position: fixed;
+    height: 1.5rem;
+    bottom: 4rem;
+    right: 2rem;
+    z-index: 12;
+}
+
+div.tab form input[type="button"] {
+    padding: 0.4rem 1rem;
+}
+
+div.popups-container {
+    display: table;
+    width: 99vw;
+    height: 99vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: #0007;
+}
+
+div.popups-container-child {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+div.popups-container-child b {
+    background-color: var(--button-background-color);
+    padding: 0.4rem;
+    border-radius: 0.3rem;
+    border: solid 1px var(--lighter-foreground-color);
+}
+
+.unset {
+    background-color: #300;
+    border-color: red;
+    color: #faa;
+}
+
+.unset:hover {
+    background-color: #700;
+}
+
+.unset:active {
+    background-color: #f00;
+}
+
+div.add-playlist-popup {
+    display: table;
+    padding: 1rem 2rem;
+    background-color: var(--container-background-color);
+    border-radius: 0.4rem;
+    border: solid 1px var(--button-hover-background-color);
+    margin: 0rem auto;
+}
+
+div.add-playlist-popup input[type="button"] {
+    padding: 0.5rem 2rem;
+}
+
+ol.popup-menu {
+    display: table;
+    padding: 0rem 0.6rem;
+    background-color: var(--container-background-color);
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    margin: 0rem auto;
+}
+
+ol.popup-menu li {
+    list-style-type: none;
+    display: table;
+    margin: 0.5rem auto;
+    padding: 0.5rem 1rem;
+    font-weight: bolder;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    user-select: none;
+}
+
+ol.popup-menu li:hover {
+    border-bottom: solid 2px var(--button-hover-background-color);
+}
+
+ol.popup-menu li:active {
+    background-color: var(--button-hover-background-color);
+}
+
+div.short {
+    display: table;
+    position: relative;
+    margin: 1rem auto;
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.4rem;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+}
+
+div.short video {
+    display: table;
+    height: var(--short-heigth);
+    width: var(--short-width);
+    max-width: var(--max-short-width);
+    object-fit: contain;
+    border-radius: 0.4rem;
+}
+
+div.short-ui {
+    display: table;
+    position: absolute;
+    top: 0rem;
+    left: 0rem;
+    z-index: 9;
+}
+
+div.short-loading-progress {
+    display: table;
+    position: absolute;
+    height: 24vh;
+    width: 24vh;
+    top: 28vh;
+    margin-left: calc(0.5 * (100% - 24vh));
+    z-index: 12;
+    border-top: solid 0.3rem var(--primary-foreground-color);
+    border-radius: 50%;
+}
+
+div.short-loading-progress-child {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+div.short-loading-progress-child div {
+    display: table;
+    height: 80%;
+    width: 80%;
+    border-bottom: solid 0.3rem var(--primary-foreground-color);
+    border-radius: 50%;
+    margin: 0rem auto;
+}
+
+div.video div.video-loading-progress {
+    top: calc(0.5 * (100% - 24vh));
+}
+
+div.short-buttons-container {
+    display: table;
+    width: var(--short-width);
+    max-width: var(--max-short-width);
+    height: calc(var(--short-heigth) - 4.7rem);
+    white-space: nowrap;
+}
+
+div.short-buttons-container * {
+    user-select: none;
+}
+
+div.short-buttons-container-child {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+div.short-play-button,
+div.short-reactions-container {
+    display: inline-table;
+    vertical-align: middle;
+}
+
+div.short-play-button {
+    width: calc(var(--short-width) - 3.4rem);
+    max-width: calc(var(--max-short-width) - 3.4rem);
+}
+
+div.short-play-button img {
+    display: table;
+    width: 35%;
+    margin-left: calc(32.5% + 1.7rem);
+    user-select: none;
+}
+
+div.short-reaction {
+    display: table;
+    margin: 1rem 0.5rem;
+}
+
+div.short-reaction img {
+    height: 1rem;
+    cursor: pointer;
+    display: table;
+    margin: 0rem auto;
+}
+
+div.short-reaction input {
+    display: table;
+    width: 1.5rem;
+    text-align: center;
+    background: transparent;
+    border: none;
+    margin: 0rem auto;
+}
+
+div.short-playback-progress {
+    height: 0.2rem;
+    width: 70%;
+    background-color: var(--primary-foreground-color);
+    border-radius: 0.2rem;
+}
+
+div.short-title-container {
+    width: 90vw;
+    max-width: 50vh;
+    height: 4rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-y: scroll;
+    margin: 0.2rem auto;
+}
+
+div.short video:focus,
+div.short input:focus {
+    outline: none;
+    cursor: default;
+}
+
+div.loading-bar {
+    display: table;
+    margin: 0.5rem auto;
+    text-align: center;
+}
+
+div.loading-bar p {
+    display: table;
+    margin: 0.4remrem auto;
+    text-align: center;
+}
+
+div.progress-bar {
+    display: table;
+    width: 70vw;
+    height: 1.2rem;
+    margin: 0.4rem auto;
+    border-radius: 0.4rem;
+    border: solid 1px var(--lighter-foreground-color);
+}
+
+div.progress-bar div {
+    text-align: center;
+    height: 100%;
+    width: 100%;
+    background-color: var(--primary-foreground-color);
+    border-radius: 0.4rem;
+}
+
+div.progress-bar div b {
+    color: white;
+    font-size: 1.3rem;
+    background: transparent;
+    border: none;
+    display: inline;
+}
+
+div.subscribees-container {
+    display: table;
+    margin: 0.5rem auto;
+    white-space: auto;
+}
+
+div.subscribee {
+    display: inline-table;
+    margin: 0.2rem 0.4rem;
+    cursor: pointer;
+    border-radius: 0.4rem;
+}
+
+div.subscribee:hover {
+    background-color: var(--button-background-color);
+}
+
+div.subscribee:active {
+    background-color: var(--button-hover-background-color);
+}
+
+div.subscribee img {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 50%;
+    object-fit: cover;
+    display: table;
+    margin: 0rem auto;
+    border: solid 1px var(--primary-foreground-color);
+}
+
+div.subscribee input[type="text"] {
+    display: table;
+    margin: 0rem auto;
+    max-width: 4rem;
+    background: transparent;
+    border-radius: 0.3rem;
+    border: solid 1px var(--primary-foreground-color);
+}
+
+div.subscribee input[type="text"]:focus {
+    outline: none;
+}
+
+img.subscribe-button {
+    display: inline-table;
+    vertical-align: middle;
+    height: 2rem;
+    margin: 0rem 0.3rem;
+    cursor: pointer;
+}
+
+img.short-subscribe-button {
+    display: table;
+    opacity: 0.5;
+}
+
+img.short-subscribe-button:hover {
+    opacity: 1;
+}
+
+div.subscribee-section-title {
+    cursor: default;
+    user-select: none;
+    display: table;
+    width: 95vw;
+    margin: 0.5rem 0rem;
+    margin-top: 1.5rem;
+    border-bottom: solid 1px var(--primary-foreground-color);
+    background-color: var(--container-background-color);
+    border-radius: 0.4rem 0.4rem 0rem 0rem;
+}
+
+div.subscribee-section-title:hover {
+    background-color: var(--button-background-color);
+}
+
+div.subscribee-section-title:active {
+    background-color: var(--button-hover-background-color);
+}
+
+div.subscribee-section-title div {
+    display: table;
+    white-space: normal;
+}
+
+div.subscribee-section-title b,
+div.subscribee-section-title img {
+    display: inline-table;
+    vertical-align: middle;
+    margin: 0.2rem;
+}
+
+div.subscribee-section-title img {
+    height: 1rem;
+}
+
+div.subscribee-section-element {
+    display: table;
+    position: relative;
+    margin: 0.3rem 1rem;
+    padding: 0.2rem 0.5rem;
+    width: 70vw;
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.4rem;
+    background-color: var(--container-background-color);
+    cursor: pointer;
+}
+
+div.embedded-content {
+    margin-left: 2rem;
+}
+
+div.subscribee-section-element:hover {
+    background-color: var(--button-background-color);
+}
+
+div.subscribee-section-element:active {
+    background-color: var(--button-hover-background-color);
+}
+
+div.subscribee-section-element div {
+    display: table;
+    white-space: normal;
+}
+
+div.subscribee-section-element b {
+    display: inline-table;
+    margin: 0rem auto;
+}
+
+div.subscribee-section-element i {
+    font-style: normal;
+    color: var(--lighter-foreground-color);
+    font-weight: 900;
+    opacity: 0.7;
+}
+
+div.subscribee-section-title,
+div.embedded-content {
+    position: relative;
+}
+
+div.subscribee-section-title img.delete-button,
+div.subscribee-section-element img.delete-button {
+    position: absolute;
+    height: 1rem;
+    top: calc(0.5 * (100% - 1rem));
+    right: 1rem;
+    cursor: pointer;
+}
+
+div.user-details {
+    display: table;
+    position: relative;
+    background-color: var(--container-background-color);
+    padding: 0rem 0.4rem;
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.4rem;
+    margin: 0.5rem auto;
+}
+
+div.user-details img.profile-pic {
+    display: table;
+    height: 4rem;
+    width: 4rem;
+    object-fit: cover;
+    border-radius: 50%;
+    border: solid 1px var(--lighter-foreground-color);
+    margin: 0.4rem auto;
+}
+
+div.user-details img.edit-button {
+    height: 1rem;
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    cursor: pointer;
+}
+
+div.user-details b {
+    color: var(--lighter-foreground-color);
+    display: table;
+    white-space: normal;
+    margin: 0.3rem auto;
+}
+
+img.content-tab-back-button {
+    top: 0.5rem;
+    left: 0.5rem;
+}
+
+b.subscriber {
+    color: var(--lighter-foreground-color);
+    display: table;
+    margin: 0.5rem 2rem;
+}
+
+b.subscriber:hover {
+    border-bottom: solid 1px var(--primary-foreground-color);
+}
+
+div.dialog {
+    display: table;
+    margin: 0rem auto;
+    background-color: var(--button-background-color);
+    border: solid 1px var(--lighter-foreground-color);
+    border-radius: 0.4rem;
+    padding: 0.2rem 0.4rem;
+}
+
+div.dialog b {
+    background: transparent;
+    border: none;
+    display: table;
+    max-width: 40vw;
+    white-space: normal;
+    color: var(--lighter-foreground-color);
+}
+
+div.dialog input {
+    margin-right: 0.5rem;
+}
+
+div.error {
+    background-color: #200;
+    border-color: red;
+}
+
+div.error b {
+    color: red;
+}
+
+label.input-label {
+    display: table;
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    text-align: right;
+    padding: 0.1rem 0.2rem;
+    margin: 0.2rem auto;
+}
+
+label.input-label input {
+    color: var(--lighter-foreground-color);
+    font-weight: 900;
+    display: inline;
+    border: none;
+    text-align: left;
+}
+
+div.conclusion {
+    display: table;
+    margin: 0rem auto;
+}
+
+div.conclusion input {
+    display: inline-table;
+    margin: 0.3rem 1rem;
+}
+
+input.cancel {
+    color: red;
+    background-color: #400;
+    border-color: red;
+}
+
+input.cancel:hover {
+    background-color: #900;
+}
+
+input.cancel:active {
+    background-color: red;
+}
+
+input.save {
+    color: greenyellow;
+    background-color: #360;
+    border-color: greenyellow;
+}
+
+input.save:hover {
+    background-color: #790;
+}
+
+input.save:active {
+    background-color: #9f0;
+}
+
+div.console {
+    display: table;
+    height: 98vh;
+    width: 98vw;
+    top: 0rem;
+    left: 0rem;
+    border: solid 1px blue;
+    border-radius: 0.3rem;
+}
+
+div.admin-console {
+    border-color: #0fa;
+}
+
+div.console-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(98vh - 2rem);
+    width: 98vw;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
+div.console-content-child {
+    display: table;
+    width: 98vw;
+    padding-left: 0.5rem;
+}
+
+div.console * {
+    color: blue;
+}
+
+div.admin-console * {
+    color: #0fd;
+}
+
+div.console-header {
+    display: table;
+    width: 100%;
+    background-color: #005;
+    text-align: center;
+    padding: 0.4rem 0rem;
+    border-bottom: solid 1px blue;
+}
+div.admin-console div.console-header {
+    background-color: #085;
+    border-color: #0fa;
+}
+
+div.console-input {
+    display: table;
+}
+
+div.console-input input, div.console-input b {
+    display: inline-table;
+    border: none;
+    background: transparent;
+}
+
+div.console-header b {
+    color: cyan;
+    display: inline;
+}
+
+div.admin-console div.console-header b {
+    color: #7fe;
+}
+
+div.console-input input::placeholder {
+    color: #00fc;
+}
+
+div.console-input input {
+    caret-shape: underscore;
+    width: calc(30rem - 13rem);
+}
+
+div.console-input input:focus {
+    outline: none;
+}
+
+div.admin-console div.console-input input::placeholder {
+    color: #0fa;
+}
+
+div.console-element {
+    display: table;
+}
+
+div.console-element b {
+    display: inline;
+}
+
+div.console-object {
+    display: table;
+    border-top: dashed 1px blue;
+    border-bottom: dashed 1px blue;
+    margin: 1rem 0rem;
+}
+
+div.admin-console div.console-object {
+    border-color: #0fd;
+}
+
+div.console-object div {
+    display: table;
+}
+
+div.console-object b.object-title {
+    display: table;
+    border-bottom: dotted 1px blue;
+    margin-bottom: 0.3rem;
+}
+
+div.console-response *, div.console-response b.object-title {
+    color: magenta;
+    border-color: magenta;
+}
+
+div.console-response b.key {
+    color: purple;
+}
+
+div.console-warning *, div.console-warning b.object-title {
+    color: var(--primary-foreground-color);
+    border-color: var(--primary-foreground-color);
+}
+
+div.console-warning b.key {
+    color: var(--lighter-foreground-color);
+}
+
+div.console-error *, div.console-error b.object-title {
+    color: red;
+    border-color: red;
+}
+
+div.console-error b.key {
+    color: #a00;
+}
+
+label.prime-admin-auth-button {
+    color: #aaf;
+    border-color: blue;
+    background-color: #005;
+}
+
+label.prime-admin-auth-button:hover {
+    background-color: #009;
+}
+
+label.prime-admin-auth-button:active {
+    background-color: blue;
+}

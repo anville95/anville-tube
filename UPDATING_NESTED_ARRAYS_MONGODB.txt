@@ -1,0 +1,266 @@
+await findOneAndUpdate(client, COLLECTION, { channel: "test-channel" }, {$set: { "videos.$[a].content.$[b].cont": "FUCKING FIRST" }}, { arrayFilters: [{ "a.id": "second" }, {"b.name": "second"}], upsert: true, new: true });
+await client.db(DB_NAME).collection(collection).deleteOne(filterObject);
+
+//Document before update
+{
+channel: "test-channel",
+videos:[
+        {
+            id: "one",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "second",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "third",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "fourth",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "five",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+    ]}
+}
+
+//Document after update
+{
+channel: "test-channel",
+videos:[
+        {
+            id: "one",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "second",
+            content: [
+                {
+                    name: "first",
+                    cont: "FUCKING FIRST"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "third",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "fourth",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+        {
+            id: "five",
+            content: [
+                {
+                    name: "first",
+                    cont: "a"
+                },
+                {
+                    name: "second",
+                    cont: "b"
+                },
+                {
+                    name: "third",
+                    cont: "c"
+                },
+                {
+                    name: "fourth",
+                    cont: "d"
+                },
+                {
+                    name: "fifth",
+                    cont: "e"
+                }
+            ]
+        },
+    ]}
+}
