@@ -16,7 +16,7 @@
     --short-heigth: 80vh;
 
     --video-width: 96vw;
-    --max-video-height: calc(96vh - 4rem);
+    --max-video-height: calc(96vh - 9rem);
 }
 
 .scrollBarVisibleElements {
@@ -209,19 +209,19 @@ div.auth-page form img {
 
 #logo-div img {
     vertical-align: middle;
-    height: 1.4rem;
+    height: 5rem;
     margin: 0rem 0.1rem;
 }
 
 #logo-div b {
     vertical-align: middle;
-    font-size: 1.4rem;
+    font-size: 2rem;
     font-weight: 900;
 }
 
 .image-button {
     cursor: pointer;
-    height: 1rem;
+    height: 1.3rem;
     margin: 0rem 0.2rem;
 }
 
@@ -271,6 +271,7 @@ div.tab-button img {
     display: table;
     height: 1.2rem;
     margin: 0.2rem auto;
+    border-radius: 0.3rem;
 }
 
 div.tab-button p {
@@ -295,7 +296,7 @@ div.video {
     scroll-snap-stop: always;
 }
 
-div.video video {
+div.video video, div.video img.thumbnail {
     display: table;
     width: var(--video-width);
     max-height: var(--max-video-height);
@@ -329,7 +330,7 @@ div.comment {
 div.comments-container {
     display: flex;
     width: 100%;
-    height: 60%;
+    height: 55%;
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: scroll;
@@ -354,7 +355,7 @@ div.comment div {
 
 div.commenting-popup textarea {
     display: flex;
-    height: 34%;
+    height: 27%;
     width: 100%;
     background: transparent;
     border-radius: 0.3rem;
@@ -403,7 +404,7 @@ div.video-ui div.play-button-container {
 div.video-ui div.fullscreen-button-container div {
     display: table;
     height: 1.5rem;
-    width: 2rem;
+    width: 1.5rem;
     border-left: solid 0.2rem var(--primary-foreground-color);
     border-right: solid 0.2rem var(--primary-foreground-color);
     border-radius: 0.3rem;
@@ -472,8 +473,12 @@ div.reaction {
     background-color: #94510030;
 }
 
-div.reaction img {
+div.reaction * {
     cursor: pointer;
+    user-select: none;
+}
+
+div.reaction img {
     vertical-align: middle;
     height: 1rem;
 }
@@ -484,6 +489,10 @@ div.reaction input {
     background: transparent;
     border: none;
     text-align: left;
+}
+
+div.reaction input:focus {
+    outline: none;
 }
 
 div.tab form {
@@ -502,6 +511,14 @@ div.tab form video {
     object-fit: contain;
     margin: 0.4rem auto;
     border-radius: 0.3rem;
+}
+
+div.tab form canvas {
+    visibility: hidden;
+    position: fixed;
+    top: 0rem;
+    left: 0rem;
+    z-index: -1;
 }
 
 div.tab form input[type="text"] {
@@ -528,6 +545,7 @@ div.popups-container {
     position: fixed;
     left: 0;
     top: 0;
+    z-index: 12;
     background-color: #0007;
 }
 
@@ -608,7 +626,7 @@ div.short {
     scroll-snap-stop: always;
 }
 
-div.short video {
+div.short video, div.short img.thumbnail {
     display: table;
     height: var(--short-heigth);
     width: var(--short-width);
@@ -867,6 +885,8 @@ div.subscribee-section-title img {
 
 div.subscribee-section-title img {
     height: 1rem;
+    width: 1rem;
+    object-fit: contain;
 }
 
 div.subscribee-section-element {
@@ -962,6 +982,8 @@ div.user-details b {
 img.content-tab-back-button {
     top: 0.5rem;
     left: 0.5rem;
+    height: 6rem;
+    width: auto;
 }
 
 b.subscriber {
@@ -1003,6 +1025,93 @@ div.error {
 
 div.error b {
     color: red;
+}
+
+div.search-dialog {
+    display: table;
+    margin: 0rem auto;
+    background-color: var(--button-background-color);
+    border: solid 1px var(--lighter-foreground-color);
+    border-radius: 0.4rem;
+    padding: 0.2rem 0.4rem;
+}
+
+div.search-dialog b.title {
+    background: transparent;
+    border: none;
+    display: table;
+    max-width: 40vw;
+    white-space: normal;
+    color: var(--lighter-foreground-color);
+    margin: 0.1rem auto;
+}
+
+div.search-row {
+    display: table;
+}
+
+div.search-row input, div.search-row img {
+    display: inline-table;
+    vertical-align: middle;
+}
+
+div.search-row input {
+    color: var(--primary-foreground-color);
+    border: solid 1px var(--button-hover-background-color);
+    border-radius: 0.3rem;
+    background: var(--container-background-color);
+    text-align: center;
+}
+
+div.search-row input:focus {
+    outline: none;
+}
+
+div.search-row input::placeholder {
+    color: var(--button-hover-background-color);
+}
+
+div.search-row img {
+    height: 1rem;
+    margin-left: 0.2rem;
+    cursor: pointer;
+}
+
+div.search-results {
+    display: table;
+    height: 70vh;
+    width: 80vw;
+    background-color: var(--container-background-color);
+    border: solid 1px var(--primary-foreground-color);
+    border-radius: 0.3rem;
+    margin: 0rem auto;
+    text-align: center;
+}
+
+div.search-results div.contents-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    overflow-y: scroll;
+    height: calc(70vh - 2rem);
+    width: 80vw;
+    margin: 0rem auto;
+}
+
+div.search-results div.contents-container div.subscribee-section-element {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div.search-results b.title {
+    font-size: 1rem;
+    color: var(--lighter-foreground-color);
+    display: table;
+    margin: 0.1rem auto;
+    border: none;
+    text-decoration: underline;
+    border-radius: 0%;
+    background: transparent;
 }
 
 label.input-label {

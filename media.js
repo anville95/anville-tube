@@ -6,6 +6,7 @@ const { Binary, ObjectId } = require("mongodb"),
       COLLECTION = "channels",
       SHORTS_CHUNKS_COLLECTION = "content-chunks.shorts",
       VIDEOS_CHUNKS_COLLECTION = "content-chunks.videos",
+      THUMBNAILS_COLLECTION = "thumbnails",
       CATALOGUE_COLLECTION = "catalogue",
       DEFAULT_CONTENTS_COLLECTION = "default_contents",
       CONTENT_TYPES = {
@@ -17,8 +18,9 @@ const { Binary, ObjectId } = require("mongodb"),
       CATALOGUE_ELEMENT_TYPES = {
         VIDEO: "video",
         SHORT: "short",
-        PLAYLIST: "playlist",
-        CHANNEL: "channel"
+        CHANNEL: "channel",
+        VIDEO_PLAYLIST: "video-playlist",
+        SHORT_PLAYLIST: "short-playlist"
       },
       MEDIA_ERROR_CODES = {
         channelNotFoundError: 4,
@@ -37,9 +39,11 @@ const { Binary, ObjectId } = require("mongodb"),
     },
     DEFAULT_CONTENT_IDS = {
         defaultProfilePictures: "default-profile-pictures"
-    };
+    },
+    SEPARATORS = /[ ,./?*-+&)(^%$#@!~`\\\"'\n;:]/;
+    
 
-function Content(title, id, type=CONTENT_TYPES.VIDEO, dataType, size, channelEmailAddress, views=0, likes=0, dislikes=0, comments=[], dateUploaded = new Date().toLocaleDateString(), playlistTitle, state=CONTENT_STATES.UNHIDDEN) {
+function Content(title, id, type=CONTENT_TYPES.VIDEO, dataType, size, channelEmailAddress, views=0, likes=0, dislikes=0, comments=[], dateUploaded = new Date().toLocaleDateString(), playlistTitle, thumbnailAddress,  thumbnail, state=CONTENT_STATES.UNHIDDEN) {
     this.title = title;
     this.id = id;
     this.type = type;
@@ -51,7 +55,9 @@ function Content(title, id, type=CONTENT_TYPES.VIDEO, dataType, size, channelEma
     this.dislikes = dislikes;
     this.comments = comments;
     this.dateUploaded = dateUploaded;
-    if(playlistTitle){ this.playlistTitle = playlistTitle;}
+    if(playlistTitle){ this.playlistTitle = playlistTitle; }
+    if(thumbnailAddress){ this.thumbnailAddress = thumbnailAddress; }
+    if(thumbnail){ this.thumbnail = thumbnail; }
     this.state = state;
 }
 
@@ -148,10 +154,12 @@ async function unBanChannel(client, channelEmailAddress) {
 }
 
 async function removeChannel(client, channelEmailAddress) {
-    if(!await readOne(client, COLLECTION, new Channel(channelEmailAddress))) {
+    const channel = await readOne(client, COLLECTION, new Channel(channelEmailAddress));
+    if(!channel) {
         throw CreateMediaError(MEDIA_ERROR_CODES.channelNotFoundError, "The channel which you seek to delete does not exist!");
     }
     await deleteOne(client, COLLECTION, new Channel(channelEmailAddress));
+    return channel.subscribers;
 }
 
 async function getChannel({client, emailAddress}) {
@@ -216,7 +224,7 @@ async function removeAllPlaylists({client, channelEmailAddress, contentType}) {
     }
 }
 
-async function writeContent({client, contentTitle, contentFile, contentType, channelEmailAddress, playlistTitle}){
+async function writeContent({client, contentTitle, contentFile, thumbnail, contentType, channelEmailAddress, playlistTitle}){
     let channel = await readOne(client, COLLECTION, new Channel(channelEmailAddress));
     if(!channel) {
         throw CreateMediaError(MEDIA_ERROR_CODES.channelNotFoundError, "You have not created a channel yet!");
@@ -229,7 +237,8 @@ async function writeContent({client, contentTitle, contentFile, contentType, cha
         await writeOne(client, collection, new ContentChunk(contentId, chunks[i], i))
     }
 
-    let content = new Content(contentTitle, contentId, contentType, dataType, size, channelEmailAddress, [], [], [], [], undefined, playlistTitle),
+    const thumbnailAddress = "/thumbnail/" + (contentType===CONTENT_TYPES.VIDEO?"videos/":"shorts/") + (playlistTitle?"playlist-present/":"") + channelEmailAddress+"/" + (playlistTitle?(playlistTitle+"/"):"") + contentTitle;
+    let content = new Content(contentTitle, contentId, contentType, dataType, size, channelEmailAddress, [], [], [], [], undefined, playlistTitle, thumbnailAddress),
     channelQuery = new Channel(channelEmailAddress);
     if(contentType === CONTENT_TYPES.VIDEO) {
         if(playlistTitle) {
@@ -244,8 +253,25 @@ async function writeContent({client, contentTitle, contentFile, contentType, cha
             await updateOne(client, COLLECTION, channelQuery, { $push: { shorts: content } });
         }
     }
+    await writeOne(client, THUMBNAILS_COLLECTION, {contentId, thumbnail: new Binary(await readFile(thumbnail.path))})
+    await unlink(thumbnail.path);
     await insertCatalogueElement({ client, title: contentTitle, type: contentType, channelEmailAddress, playlistTitle });
     await notifySubscribers(client, channelEmailAddress, new Notification(channel.title + "Has uploaded new " + (contentType === CONTENT_TYPES.VIDEO ? "video": "short") + "; " + contentTitle, contentType === CONTENT_TYPES.VIDEO ? NOTIFICATION_ACTIONS.watchVideo : NOTIFICATION_ACTIONS.watchShort, new CatalogueAddress(channelEmailAddress, playlistTitle, contentType)));
+}
+
+async function getContentThumbnail({client, contentTitle, contentType, channelEmailAddress, playlistTitle}) {
+    contentTitle = decodeURIComponent(contentTitle);
+    if(playlistTitle){ playlistTitle = decodeURIComponent(playlistTitle); }
+    const contentId = contentType===CONTENT_TYPES.VIDEO ? (
+        playlistTitle ?
+        (await readOne(client, COLLECTION, new Channel(channelEmailAddress))).playlists.videos.filter(({title})=>(title===playlistTitle))[0].contents.filter(({title})=>(title===contentTitle))[0].id :
+        (await readOne(client, COLLECTION, new Channel(channelEmailAddress))).videos.filter(({title})=> (title===contentTitle))[0].id
+    ) : (
+        playlistTitle ?
+        (await readOne(client, COLLECTION, new Channel(channelEmailAddress))).playlists.shorts.filter(({title})=>(title===playlistTitle))[0].contents.filter(({title})=>(title===contentTitle))[0].id :
+        (await readOne(client, COLLECTION, new Channel(channelEmailAddress))).shorts.filter(({title})=> (title===contentTitle))[0].id
+    );
+    return (await readOne(client, THUMBNAILS_COLLECTION, {contentId})).thumbnail.buffer;
 }
 
 async function removeContent({client, id, title, type, channelEmailAddress, playlistTitle}) {
@@ -289,20 +315,23 @@ async function removeAllPlaylistlessContents({channelEmailAddress, contentType})
 }
 
 async function readContents({client, channelEmailAddress, contentType, playlistTitle}) {
-    let channelQuery = new Channel(channelEmailAddress);
+    const channelQuery = new Channel(channelEmailAddress);
+    let content;
     if(contentType === CONTENT_TYPES.VIDEO) {
         if(playlistTitle) {
-            return (await readOne(client, COLLECTION, channelQuery)).playlists.videos.filter(videosPlaylist => videosPlaylist.title === playlistTitle)[0].contents;
+            content = (await readOne(client, COLLECTION, channelQuery)).playlists.videos.filter(videosPlaylist => videosPlaylist.title === playlistTitle)[0].contents;
         } else {
-            return (await readOne(client, COLLECTION, channelQuery)).videos;
+            content = (await readOne(client, COLLECTION, channelQuery)).videos;
         }
     } else {
         if(playlistTitle) {
-            return (await readOne(client, COLLECTION, channelQuery)).playlists.shorts.filter(shortsPlaylist => shortsPlaylist.title === playlistTitle)[0].contents;
+            content = (await readOne(client, COLLECTION, channelQuery)).playlists.shorts.filter(shortsPlaylist => shortsPlaylist.title === playlistTitle)[0].contents;
         } else {
-            return (await readOne(client, COLLECTION, channelQuery)).shorts;
+            content = (await readOne(client, COLLECTION, channelQuery)).shorts;
         }
     }
+    delete content.thumbnail;
+    return content;
 }
 
 async function streamContent({client, contentTitle, contentType, channelEmailAddress, playlistTitle}) {
@@ -442,11 +471,14 @@ async function undislikeContent({ client, emailAddress, contentTitle, contentTyp
     }
 }
 
-async function searchContents(client, contentTitle, contentType) {
+async function searchContents({client, contentTitle, contentType}) {
     let resultContents = [],
     resultCatalogueElements = await searchCatalogueElements(client, contentTitle, contentType === CONTENT_TYPES.VIDEO ? CATALOGUE_ELEMENT_TYPES.VIDEO : CATALOGUE_ELEMENT_TYPES.SHORT);
     for(let catalogueElement of resultCatalogueElements) {
         resultContents[resultContents.length] = await getDBElementFromCatalogueElement({ client, ...catalogueElement });
+    }
+    for(let i = 0; i < resultContents.length; i++) {
+        delete resultContents[i].thumbnail;
     }
     return resultContents;
 }
@@ -458,9 +490,9 @@ async function searchContentsForAdmin(client, channelEmailAddress, key, contentT
     if(!channel) {
         throw CreateMediaError(MEDIA_ERROR_CODES.channelNotFoundError, "The channel whose " + (contentType===CONTENT_TYPES.VIDEO?"video":"short") + " content you seek to search does not exist!");
     }
-    resultContents = channel[contentTypeName].filter(({title}) => (title.indexOf(key)>=0||key.indexOf(title)>=0));
+    resultContents = channel[contentTypeName].filter(({title}) => (title.toLowerCase().indexOf(key.toLowerCase())>=0||key.toLowerCase().indexOf(title.toLowerCase())>=0));
     channel.playlists[contentTypeName].map(playlist => {
-        resultContents = [...resultContents, ...playlist.contentfilter(({title}) => (title.indexOf(key)>=0||key.indexOf(title)>=0))]
+        resultContents = [...resultContents, ...playlist.contents.filter(({title}) => (title.toLowerCase().indexOf(key.toLowerCase())>=0||key.toLowerCase().indexOf(title.toLowerCase())>=0))]
     });
     return resultContents;
 }
@@ -468,27 +500,23 @@ async function searchContentsForAdmin(client, channelEmailAddress, key, contentT
 async function readRandomContents({ client, contentType, amount=20 }) {
     let catalogue = await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" });
     if(!catalogue) {
-        catalogue = { catalogueId: "anville-tube-search-catalogue", data: { video: [], short: [], playlist: [], channel: [] } };
+        catalogue = { catalogueId: "anville-tube-search-catalogue", contents: {videos: {}, shorts: {}}, playlists: {videos: {}, shorts: {}}, channels: {} };
         await writeOne(client, CATALOGUE_COLLECTION, catalogue);
         return [];
     }
-    let contentCatalogue = catalogue.data[contentType===CONTENT_TYPES.VIDEO?"video":"short"];
-    let results = [],
-    addedPositions = [];
-    if(amount >= contentCatalogue.length) {
-        contentCatalogue.map(content => { results.push(content) });
-    } else {
-        while(results.length < amount) {
-            let randomIndex = new Date().getMilliseconds() % contentCatalogue.length;
-            while(addedPositions.indexOf(randomIndex.toString()) >= 0) {
-                randomIndex = new Date().getMilliseconds() % contentCatalogue.length;
-            }
-            results.push(contentCatalogue[randomIndex]);
-            addedPositions.push(randomIndex.toString());
-        }
+    const keyArray = Object.keys(catalogue.contents[contentType===CONTENT_TYPES.VIDEO?"videos":"shorts"]).sort(k => (Math.random() - 0.5)),
+    stringifiedResults = new Set();
+    while(stringifiedResults.size < amount && keyArray.length) {
+        catalogue.contents[contentType===CONTENT_TYPES.VIDEO?"videos":"shorts"][keyArray[0]].map(v => { stringifiedResults.add(JSON.stringify(v)); })
+        keyArray.shift();
+    }
+    const results = [];
+    for(const sr of stringifiedResults) {
+        results.push(JSON.parse(sr));
     }
     for(let i = 0; i < results.length; i++) {
         results[i] = await getDBElementFromCatalogueElement({ client, ...results[i] });
+        delete results[i].thumbnail;
     }
     return results;
 }
@@ -496,91 +524,152 @@ async function readRandomContents({ client, contentType, amount=20 }) {
 async function insertCatalogueElement({ client, title, type, playlists, contentType, channelEmailAddress, playlistTitle }) {
     let catalogue = await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" });
     if(!catalogue) {
-        catalogue = { catalogueId: "anville-tube-search-catalogue", data: { video: [], short: [], playlist: [], channel: [] } };
+        catalogue = { catalogueId: "anville-tube-search-catalogue", contents: {videos: {}, shorts: {}}, playlists: {videos: {}, shorts: {}}, channels: {} };
         await writeOne(client, CATALOGUE_COLLECTION, catalogue);
     }
-    let updateObjectChild = {};
-    updateObjectChild["data." + (type? (type===CONTENT_TYPES.VIDEO?"video":"short") : (playlists?"channel":"playlist"))] = createCatalogueElementFromDBElement({ title, type, playlists, contentType, channelEmailAddress, playlistTitle });
-    await updateOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }, { $push: updateObjectChild });
+    let value = {},
+    updatePrefix = "",
+    lookUp = {};
+    keySet = new Set(title.toLowerCase().split(SEPARATORS).filter(Boolean));
+    if(type) {
+        updatePrefix = "contents." + (type===CONTENT_TYPES.VIDEO?"videos.":"shorts.");
+        value = {title, playlistTitle, channelEmailAddress, type: type===CONTENT_TYPES.VIDEO?CATALOGUE_ELEMENT_TYPES.VIDEO:CATALOGUE_ELEMENT_TYPES.SHORT};
+        lookUp = catalogue.contents[type===CONTENT_TYPES.VIDEO?"videos":"shorts"];
+    } else if(contentType) {
+        updatePrefix = "playlists." + (contentType===CONTENT_TYPES.VIDEO?"videos.":"shorts.");
+        value = {title, channelEmailAddress, type: contentType===CONTENT_TYPES.VIDEO?CATALOGUE_ELEMENT_TYPES.VIDEO_PLAYLIST:CATALOGUE_ELEMENT_TYPES.SHORT_PLAYLIST};
+        lookUp = catalogue.playlists[contentType===CONTENT_TYPES.VIDEO?"videos":"shorts"];
+    } else if(playlists) {
+        updatePrefix = "channels."
+        value = { channelEmailAddress, type: CATALOGUE_ELEMENT_TYPES.CHANNEL };
+        lookUp = catalogue.channels;
+    } else {
+        throw CreateMediaError(MEDIA_ERROR_CODES.invalidCatalogueTypeError, "The passed parameters are invalid!");
+    }
+    for(const k of keySet) {
+        const updateObject = {};
+        if(lookUp[k]) {
+            updateObject[updatePrefix + k] = value;
+            await updateOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }, { $push: updateObject });
+        } else {
+            updateObject[updatePrefix + k] = [value];
+            await updateOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }, { $set: updateObject });
+        }
+    }
 }
 
 async function removeCatalogueElement({ client, title, type, playlists, contentType, channelEmailAddress, playlistTitle }) {
-    let catalogue = await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" });
-    if(!catalogue) {
-        catalogue = { catalogueId: "anville-tube-search-catalogue", data: { video: [], short: [], playlist: [], channel: [] } };
-        await writeOne(client, CATALOGUE_COLLECTION, catalogue);
-        return;
+    const keySet = new Set(title.toLowerCase().split(SEPARATORS).filter(Boolean));
+    let value = {};
+    let updatePrefix = "";
+    if(type) {
+        updatePrefix = "contents."+(type===CONTENT_TYPES.VIDEO?"videos.":"shorts.");
+        value = { title, playlistTitle, channelEmailAddress }
+    } else if(contentType) {
+        updatePrefix = "playlists."+(contentType===CONTENT_TYPES.VIDEO?"videos.":"shorts.");
+        value = { title, channelEmailAddress };
+    } else if(playlists) {
+        updatePrefix = "channels."
+        value = channelEmailAddress;
+    } else {
+        throw CreateMediaError(MEDIA_ERROR_CODES.invalidCatalogueTypeError, "The passed parameters are invalid!");
     }
-    let updateObjectChild = {};
-    updateObjectChild["data." + (type? (type===CONTENT_TYPES.VIDEO?"video":"short") : (playlists?"channel":"playlist"))] = createCatalogueElementFromDBElement({ title, type, playlists, contentType, channelEmailAddress, playlistTitle });
-    await updateOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }, { $pull: updateObjectChild });
+    for(const k of keySet) {
+        const updateObject = {};
+        updateObject[updatePrefix + k] = value;
+        await updateOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }, { $pull: updateObject });
+    }
+    console.log("REMOVAL COMPLETE...");
+    console.log(await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" }));
 }
 
 async function searchCatalogueElements(client, key, type) {
-    let catalogue = await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" });
-    if(type) {
-        switch(type) {
-            case CATALOGUE_ELEMENT_TYPES.VIDEO:
-                return catalogue.data.video.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)));
-            case CATALOGUE_ELEMENT_TYPES.SHORT:
-                return catalogue.data.short.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)));
-            case CATALOGUE_ELEMENT_TYPES.PLAYLIST:
-                return catalogue.data.playlist.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)));
-            case CATALOGUE_ELEMENT_TYPES.CHANNEL:
-                return catalogue.data.channel.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)));
+    const catalogue = await readOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue" });
+    if(!catalogue) {
+        await writeOne(client, CATALOGUE_COLLECTION, { catalogueId: "anville-tube-search-catalogue", contents: {videos: {}, shorts: {}}, playlists: {videos: {}, shorts: {}}, channels: {} });
+        return [];
+    }
+    keySet = new Set(key.toLowerCase().split(SEPARATORS).filter(Boolean));
+    const results = new Set();
+    if(type===CATALOGUE_ELEMENT_TYPES.VIDEO||type===CATALOGUE_ELEMENT_TYPES.SHORT) {
+        for(const k of keySet) {
+            if(catalogue.contents[type===CATALOGUE_ELEMENT_TYPES.VIDEO?"videos":"shorts"][k]) {
+                catalogue.contents[type===CATALOGUE_ELEMENT_TYPES.VIDEO?"videos":"shorts"][k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+        }
+    } else if(type===CATALOGUE_ELEMENT_TYPES.VIDEO_PLAYLIST||type===CATALOGUE_ELEMENT_TYPES.SHORT_PLAYLIST) {
+        for(const k of keySet) {
+            if(catalogue.playlists[type===CATALOGUE_ELEMENT_TYPES.VIDEO_PLAYLIST?"videos":"shorts"][k]) {
+                catalogue.playlists[type===CATALOGUE_ELEMENT_TYPES.VIDEO_PLAYLIST?"videos":"shorts"][k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+        }
+    } else if(type===CATALOGUE_ELEMENT_TYPES.CHANNEL) {
+        for(const k of keySet) {
+            if(catalogue.channels[k]) {
+                catalogue.channels[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
         }
     } else {
-        let results = catalogue.data.video.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)));
-        results = [...results, ...catalogue.data.short.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)))];
-        results = [...results, ...catalogue.data.playlist.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)))];
-        results = [...results, ...catalogue.data.channel.filter((catalogueElement => compareSearchKeywords(catalogueElement.key, key)))];
-        return results;
-    }
-}
-
-function createCatalogueElementFromDBElement({ title, type, playlists, contentType, channelEmailAddress, playlistTitle }) {
-    //videos and shorts
-    if(type) {
-        if(type === CONTENT_TYPES.VIDEO) {
-            return new CatalogueElement(title, CATALOGUE_ELEMENT_TYPES.VIDEO, new CatalogueAddress(channelEmailAddress, playlistTitle));
-        } else {
-            return new CatalogueElement(title, CATALOGUE_ELEMENT_TYPES.SHORT, new CatalogueAddress(channelEmailAddress, playlistTitle));
+        for(const k of keySet) {
+            if(catalogue.contents.videos[k]) {
+                catalogue.contents.videos[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+            if(catalogue.contents.shorts[k]) {
+                catalogue.contents.shorts[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+            if(catalogue.playlists.videos[k]) {
+                catalogue.playlists.videos[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+            if(catalogue.playlists.shorts[k]) {
+                catalogue.playlists.shorts[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
+            if(catalogue.channels[k]) {
+                catalogue.channels[k].map(r => {
+                    results.add(JSON.stringify(r));
+                })
+            }
         }
-    //playlist
-    } else if(contentType) {
-        return new CatalogueElement(title, CATALOGUE_ELEMENT_TYPES.PLAYLIST, new CatalogueAddress(channelEmailAddress, title, contentType));
-    //channel
-    } else if(playlists){
-        return new CatalogueElement(title, CATALOGUE_ELEMENT_TYPES.CHANNEL, new CatalogueAddress(channelEmailAddress));
-    } else {
-        throw CreateMediaError(MEDIA_ERROR_CODES.invalidCreateCatalogueElementParameters, "The parameters provided did not match any catalogue type!");
     }
+    resultsArray = [];
+    for(const r of results) {
+        resultsArray.push(JSON.parse(r));
+    }
+    return resultsArray;
 }
 
-async function getDBElementFromCatalogueElement({ client, key, type, address }) {
+async function getDBElementFromCatalogueElement({ client, type, title, playlistTitle, channelEmailAddress }) {
+    const channel = (await readOne(client, COLLECTION, new Channel(channelEmailAddress)));
     switch(type) {
         case CATALOGUE_ELEMENT_TYPES.VIDEO:
-            if(address.playlistTitle) {
-                return (await readOne(client, COLLECTION, new Channel(address.channelEmailAddress))).playlists.videos.filter(playlist => playlist.title === address.playlistTitle)[0].contents.filter(videoContent => videoContent.title === key)[0];
-            } else {
-                return (await readOne(client, COLLECTION, new Channel(address.channelEmailAddress))).videos.filter(videoContent => videoContent.title === key)[0];
-            }
+            return playlistTitle ? 
+            channel.playlists.videos.filter(p => (p.title===playlistTitle))[0].contents.filter(c => (c.title===title))[0] :
+            channel.videos.filter(v => (v.title===title))[0];
         case CATALOGUE_ELEMENT_TYPES.SHORT:
-            if(address.playlistTitle) {
-                return (await readOne(client, COLLECTION, new Channel(address.channelEmailAddress))).playlists.shorts.filter(playlist => playlist.title === address.playlistTitle)[0].contents.filter(shortContent => shortContent.title === key)[0];
-            } else {
-                return (await readOne(client, COLLECTION, new Channel(address.channelEmailAddress))).shorts.filter(shortContent => shortContent.title === key)[0];
-            }
-        case CATALOGUE_ELEMENT_TYPES.PLAYLIST:
-            if(address.contentType === CONTENT_TYPES.VIDEO) {
-                return (await readOne(client, new Channel(address.channelEmailAddress))).playlists.videos.filter(playlist => playlist.title === address.playlistTitle)[0];
-            } else {
-                return (await readOne(client, new Channel(address.channelEmailAddress))).playlists.shorts.filter(playlist => playlist.title === address.playlistTitle)[0];
-            }
-        case CATALOGUE_ELEMENT_TYPES.CHANNEL:
-            return await readOne(client, COLLECTION, new Channel(address.channelEmailAddress));
+            return playlistTitle ? 
+            channel.playlists.shorts.filter(p => (p.title===playlistTitle))[0].contents.filter(c => (c.title===title))[0] :
+            channel.shorts.filter(v => (v.title===title))[0];
+        case CATALOGUE_ELEMENT_TYPES.VIDEO_PLAYLIST:
+            return channel.playlists.videos.filter(p => (p.title===title))[0];
+        case CATALOGUE_ELEMENT_TYPES.SHORT_PLAYLIST:
+            return channel.playlists.shorts.filter(p => (p.title===title))[0];
+        case channel:
+            return channel;
         default:
-            throw CreateMediaError(MEDIA_ERROR_CODES.invalidCatalogueTypeError, "The type of the catalogue provided does not exist!");
+            throw CreateMediaError(MEDIA_ERROR_CODES.invalidCatalogueTypeError, `The provided catalogue type, [${type}], for conversion is invalid`);
     }
 }
 
@@ -678,6 +767,7 @@ module.exports = {
     searchPlaylists,
     CONTENT_TYPES,
     writeContent,
+    getContentThumbnail,
     removeContent,
     removeAllPlaylistlessContents,
     readContents,

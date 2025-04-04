@@ -10,7 +10,7 @@ const express = require("express"),
       { createUserAccount, authenticateUserAccount, getProfilePicture, updateUserAccount } = require("./auth.js"),
       { connectToDBServer } = require("./db-utils.js"),
       { stringifyError } = require("./util.js"),
-      { writeContent, streamContent, CONTENT_TYPES, addPlaylist, readPlaylists, readContents, readRandomContents, likeContent, dislikeContent, unlikeContent, undislikeContent, readComments, writeComment, readPlaylistlessContents, getChannel, removePlaylist, removeContent, removeAllPlaylists, removeAllPlaylistlessContents } = require("./media.js"),
+      { writeContent, streamContent, CONTENT_TYPES, addPlaylist, readPlaylists, readContents, readRandomContents, likeContent, dislikeContent, unlikeContent, undislikeContent, readComments, writeComment, readPlaylistlessContents, getChannel, removePlaylist, removeContent, removeAllPlaylists, removeAllPlaylistlessContents, getContentThumbnail, searchContents } = require("./media.js"),
       { addSubscription, removeSubscription, readSubscriptions } = require("./subscriptions.js"),
       { readNotifications, removeNotification } = require("./notifications.js"),
       { writeMessage, readMessages, removeMessage, getComments } = require("./messaging.js"),
@@ -44,10 +44,10 @@ var app = express()
         let { channelEmailAddress, contentType } = req.body;
         handleRequest(readPlaylists, { client, channelEmailAddress, contentType: Number(contentType) }, res);
     })
-    .post("/upload-content", uploadFile.single("contentFile"), (req, res) => {
+    .post("/upload-content", uploadFile.fields([{name: "contentFile", maxCount: 1}, {name: "thumbnail", maxCount: 1}]), (req, res) => {
         let { contentTitle, contentType, channelEmailAddress, playlistTitle } = req.body,
-        contentFile = req.file;
-        handleRequest(writeContent, { client, contentTitle, contentType: Number(contentType), channelEmailAddress, playlistTitle, contentFile }, res);
+        {contentFile, thumbnail} = req.files;
+        handleRequest(writeContent, { client, contentTitle, contentType: Number(contentType), channelEmailAddress, playlistTitle, contentFile: contentFile[0], thumbnail: thumbnail[0] }, res);
     })
     .post("/get-contents", (req, res) => {
         let { channelEmailAddress, contentType, playlistTitle } = req.body;
@@ -88,6 +88,10 @@ var app = express()
     .post("/get-random-contents", (req, res) => {
         let { contentType, amount } = req.body;
         handleRequest(readRandomContents, { client, contentType, amount }, res);
+    })
+    .post("/search-contents", (req, res) => {
+        const {keyword, contentType} = req.body;
+        handleRequest(searchContents, {client, contentTitle:keyword, contentType}, res)
     })
     .post("/like", (req, res) => {
         let { contentTitle, emailAddress, contentType, channelEmailAddress, playlistTitle } = req.body;
@@ -181,6 +185,34 @@ var app = express()
         url = url.substring(0, url.lastIndexOf("/"));
         let channelEmailAddress = url.substring(url.lastIndexOf("/") + 1);
         handleRequest(streamContent, { client, contentTitle, channelEmailAddress, contentType: CONTENT_TYPES.VIDEO }, res, true, true);})
+    .get("/thumbnail/shorts/playlist-present/*", (req, res) => {
+        let contentTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let playlistTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let channelEmailAddress = req.url.substring(req.url.lastIndexOf("/") + 1);
+        handleRequest(getContentThumbnail, {client, contentType:CONTENT_TYPES.SHORT, contentTitle, playlistTitle, channelEmailAddress}, res, true)
+    })
+    .get("/thumbnail/shorts/*", (req, res) => {
+        let contentTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let channelEmailAddress = req.url.substring(req.url.lastIndexOf("/") + 1);
+        handleRequest(getContentThumbnail, {client, contentTitle, contentType: CONTENT_TYPES.SHORT, channelEmailAddress}, res, true)
+    })
+    .get("/thumbnail/videos/playlist-present/*", (req, res) => {
+        let contentTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let playlistTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let channelEmailAddress = req.url.substring(req.url.lastIndexOf("/") + 1);
+        handleRequest(getContentThumbnail, {client, contentType:CONTENT_TYPES.VIDEO, contentTitle, playlistTitle, channelEmailAddress}, res, true)
+    })
+    .get("/thumbnail/videos/*", (req, res) => {
+        let contentTitle = req.url.substring(req.url.lastIndexOf("/") + 1);
+        req.url = req.url.substring(0, req.url.lastIndexOf("/"));
+        let channelEmailAddress = req.url.substring(req.url.lastIndexOf("/") + 1);
+        handleRequest(getContentThumbnail, {client, contentTitle, contentType: CONTENT_TYPES.VIDEO, channelEmailAddress}, res, true)
+    })
     
     //</FOR_UI_CUSTOMISATION_IN_CSS>
     .get("/ui-fac.html", (req, res) => {
@@ -237,7 +269,9 @@ const ADMIN_COMMANDS = {
     UNBAN_USER: "unban-user",
     DELETE_USER: "delete-user",
     SEARCH_VIDEOS: "search-videos",
+    SEARCH_VIDEOS_CATALOGUE: "search-videos-catalogue",
     SEARCH_SHORTS: "search-shorts",
+    SEARCH_SHORTS_CATALOGUE: "search-shorts-catalogue",
     HIDE_CONTENT: "hide-content",
     UNHIDE_CONTENT: "unhide-content"
 }
@@ -248,7 +282,6 @@ socketIO(app)
         socket.emit("connection");
         socket.on("adminAuthData", adminAuthDataString => {
             let adminAuthData = JSON.parse(adminAuthDataString);
-            console.log({adminAuthData, adminsSessionKeys: sessionKeys.adminsSessionKeys})
             if(sessionKeys.adminsSessionKeys.indexOf(adminAuthData.key) < 0 && adminAuthData.key !== sessionKeys.primeAdminSessionKey) {
                 socket.emit("adminAuthDataNotApproved");
                 socket.disconnect(true);
@@ -287,8 +320,14 @@ socketIO(app)
         .on(ADMIN_COMMANDS.SEARCH_VIDEOS, data => {
             handleSocketCommand(ADMIN_COMMANDS.SEARCH_VIDEOS, searchVideosForAdmin, { data: {...data, client}, adminAuthData: { authAdminSessionKey: sessionKeys.adminSocketIds[socket.id].key, primeAdminSessionKey: sessionKeys.primeAdminSessionKey, adminsSessionKeys: sessionKeys.adminsSessionKeys } }, socket);
         })
+        .on(ADMIN_COMMANDS.SEARCH_VIDEOS_CATALOGUE, key => {
+            handleSocketCommand(ADMIN_COMMANDS.SEARCH_VIDEOS_CATALOGUE, searchContents, { client, contentTitle: key, contentType: CONTENT_TYPES.VIDEO }, socket)
+        })
         .on(ADMIN_COMMANDS.SEARCH_SHORTS, data => {
             handleSocketCommand(ADMIN_COMMANDS.SEARCH_SHORTS, searchShortsForAdmin, { data: {...data, client}, adminAuthData: { authAdminSessionKey: sessionKeys.adminSocketIds[socket.id].key, primeAdminSessionKey: sessionKeys.primeAdminSessionKey, adminsSessionKeys: sessionKeys.adminsSessionKeys } }, socket);
+        })
+        .on(ADMIN_COMMANDS.SEARCH_SHORTS_CATALOGUE, key => {
+            handleSocketCommand(ADMIN_COMMANDS.SEARCH_SHORTS_CATALOGUE, searchContents, { client, contentTitle: key, contentType: CONTENT_TYPES.SHORT }, socket)
         })
         .on("disconnect", () => {
             removeAdminSessionKey(removeAdminSocketId(socket.id));

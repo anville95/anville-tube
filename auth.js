@@ -95,7 +95,7 @@ async function addUserHandle(client) {
 }
 
 async function removeUserHandle(client, userHandle) {
-    await findOneAndUpdate(client, USER_HANDLES_COLLECTION, { "handles-id": "user-handles" }, { $pull: { "handles]": userHandle } });
+    await findOneAndUpdate(client, USER_HANDLES_COLLECTION, { "handles-id": "user-handles" }, { $pull: { handles: userHandle } });
 }
 
 async function authenticateUserAccount({ client, emailAddress, password }) {
@@ -113,6 +113,7 @@ async function authenticateUserAccount({ client, emailAddress, password }) {
     }
 }
 
+//WILL BE CALLED WHEN VERIFICATION CODE IS IMPLEMENTED IN SIGN-UP
 function generateVerificationCode() {
     let randomNumber = Math.floor(Math.random() * 999999);
     while(randomNumber / 100000 < 1) {
@@ -142,6 +143,14 @@ async function unBanUserAcount(client, emailAddress) {
     await unBanChannel(client, emailAddress);
 }
 
+async function removeSubscription({ client, emailAddress, channelEmailAddress }) {
+    let user = await readOne(client, COLLECTION, new User(emailAddress));
+    if(!user) {
+        throw new AuthError(AUTH_ERROR_CODES.accountNotFound, "The account from which unsubscription is to be made does not exist!");
+    }
+    await updateOne(client, COLLECTION, new User(emailAddress), { $pull: { "subscriptions": channelEmailAddress } });
+}
+
 async function deleteUserAcount(client, emailAddress) {
     let user = await readOne(client, COLLECTION, new User(emailAddress));
     if(!user) {
@@ -149,7 +158,10 @@ async function deleteUserAcount(client, emailAddress) {
     }
     await deleteOne(client, COLLECTION, new User(emailAddress));
     await removeUserHandle(client, user.handle);
-    await removeChannel(client, emailAddress);
+    const subscribers = await removeChannel(client, emailAddress);
+    for(const subscriber of subscribers) {
+        await removeSubscription({client, emailAddress: subscriber, channelEmailAddress: emailAddress});
+    }
 }
 
 module.exports = {
